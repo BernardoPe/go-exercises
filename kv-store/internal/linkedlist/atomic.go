@@ -4,47 +4,48 @@ import (
 	"sync/atomic"
 )
 
-type AtomicNode[T comparable] struct {
-	key   T
-	value T
-	next  atomic.Pointer[AtomicNode[T]]
+type AtomicNode[K comparable, V any] struct {
+	key   K
+	value atomic.Value
+	next  atomic.Pointer[AtomicNode[K, V]]
 }
 
-type AtomicLinkedList[T comparable] struct {
-	head atomic.Pointer[AtomicNode[T]]
+type AtomicLinkedList[K comparable, V any] struct {
+	head atomic.Pointer[AtomicNode[K, V]]
 	size atomic.Int64
 }
 
-func NewAtomicLinkedList[T comparable]() *AtomicLinkedList[T] {
-	return &AtomicLinkedList[T]{}
+func NewAtomic[K comparable, V any]() *AtomicLinkedList[K, V] {
+	return &AtomicLinkedList[K, V]{}
 }
 
-func (l *AtomicLinkedList[T]) Get(key T) (T, bool) {
+func (l *AtomicLinkedList[K, V]) Get(key K) (V, bool) {
 	curr := l.head.Load()
 	for curr != nil {
 		if curr.key == key {
-			return curr.value, true
+			return curr.value.Load().(V), true
 		}
 		curr = curr.next.Load()
 	}
-	var zero T
+	var zero V
 	return zero, false
 }
 
-func (l *AtomicLinkedList[T]) Set(key T, value T) error {
+func (l *AtomicLinkedList[K, V]) Set(key K, value V) error {
 	for {
 		head := l.head.Load()
 
 		curr := head
 		for curr != nil {
 			if curr.key == key {
-				curr.value = value
+				curr.value.Store(value)
 				return nil
 			}
 			curr = curr.next.Load()
 		}
 
-		newNode := &AtomicNode[T]{key: key, value: value}
+		newNode := &AtomicNode[K, V]{key: key}
+		newNode.value.Store(value)
 		newNode.next.Store(head)
 
 		if l.head.CompareAndSwap(head, newNode) {
@@ -54,7 +55,7 @@ func (l *AtomicLinkedList[T]) Set(key T, value T) error {
 	}
 }
 
-func (l *AtomicLinkedList[T]) Delete(key T) error {
+func (l *AtomicLinkedList[K, V]) Delete(key K) error {
 	for {
 		head := l.head.Load()
 		if head == nil {
@@ -90,6 +91,17 @@ func (l *AtomicLinkedList[T]) Delete(key T) error {
 	}
 }
 
-func (l *AtomicLinkedList[T]) Size() int64 {
+func (l *AtomicLinkedList[K, V]) Size() int64 {
 	return l.size.Load()
+}
+
+func (l *AtomicLinkedList[K, V]) ForEach(fn func(key K, value V) bool) {
+	current := l.head.Load()
+	for current != nil {
+		val := current.value.Load().(V)
+		if !fn(current.key, val) {
+			return
+		}
+		current = current.next.Load()
+	}
 }

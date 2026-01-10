@@ -4,24 +4,24 @@ import (
 	"sync"
 )
 
-type Node[T comparable] struct {
-	key   T
-	value T
-	next  *Node[T]
+type Node[K comparable, V any] struct {
+	key   K
+	value V
+	next  *Node[K, V]
 }
 
-type LinkedList[T comparable] struct {
-	head *Node[T]
-	tail *Node[T]
+type LinkedList[K comparable, V any] struct {
+	head *Node[K, V]
+	tail *Node[K, V]
 	size int
 	sync.RWMutex
 }
 
-func NewLinkedList[T comparable]() *LinkedList[T] {
-	return &LinkedList[T]{}
+func New[K comparable, V any]() *LinkedList[K, V] {
+	return &LinkedList[K, V]{}
 }
 
-func (l *LinkedList[T]) Get(key T) (T, bool) {
+func (l *LinkedList[K, V]) Get(key K) (V, bool) {
 	l.RWMutex.RLock()
 	defer l.RWMutex.RUnlock()
 
@@ -33,11 +33,11 @@ func (l *LinkedList[T]) Get(key T) (T, bool) {
 		curr = curr.next
 	}
 
-	var zero T
+	var zero V
 	return zero, false
 }
 
-func (l *LinkedList[T]) Set(key T, value T) error {
+func (l *LinkedList[K, V]) Set(key K, value V) error {
 	l.RWMutex.Lock()
 	defer l.RWMutex.Unlock()
 
@@ -50,7 +50,7 @@ func (l *LinkedList[T]) Set(key T, value T) error {
 		curr = curr.next
 	}
 
-	newNode := &Node[T]{key: key, value: value}
+	newNode := &Node[K, V]{key: key, value: value}
 	if l.head == nil {
 		l.head = newNode
 		l.tail = newNode
@@ -63,11 +63,11 @@ func (l *LinkedList[T]) Set(key T, value T) error {
 	return nil
 }
 
-func (l *LinkedList[T]) Delete(key T) error {
+func (l *LinkedList[K, V]) Delete(key K) error {
 	l.RWMutex.Lock()
 	defer l.RWMutex.Unlock()
 
-	var prev *Node[T]
+	var prev *Node[K, V]
 	curr := l.head
 	for curr != nil {
 		if curr.key == key {
@@ -89,8 +89,21 @@ func (l *LinkedList[T]) Delete(key T) error {
 	return nil
 }
 
-func (l *LinkedList[T]) Size() int {
+func (l *LinkedList[K, V]) Size() int {
 	l.RWMutex.RLock()
 	defer l.RWMutex.RUnlock()
 	return l.size
+}
+
+func (l *LinkedList[K, V]) ForEach(fn func(key K, value V) bool) {
+	l.RWMutex.RLock()
+	defer l.RWMutex.RUnlock()
+
+	current := l.head
+	for current != nil {
+		if !fn(current.key, current.value) {
+			return
+		}
+		current = current.next
+	}
 }

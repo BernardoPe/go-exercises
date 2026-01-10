@@ -9,44 +9,44 @@ import (
 
 const DefaultShardCount = 16
 
-type ShardedLinkedList[T comparable] struct {
-	shards    []interfaces.ILinkedList[T]
+type ShardedLinkedList[K comparable, V any] struct {
+	shards    []interfaces.ILinkedList[K, V]
 	shardMask uint64
 }
 
-func NewGenericShardedLinkedList[T comparable](shardCount int, factory interfaces.LinkedListFactory[T]) *ShardedLinkedList[T] {
+func NewSharded[K comparable, V any](shardCount int) *ShardedLinkedList[K, V] {
+	factory := func() interfaces.ILinkedList[K, V] {
+		return New[K, V]()
+	}
+	return newGenericShardedLinkedList(shardCount, factory)
+}
+
+func NewShardedAtomic[K comparable, V any](shardCount int) *ShardedLinkedList[K, V] {
+	factory := func() interfaces.ILinkedList[K, V] {
+		return NewAtomic[K, V]()
+	}
+	return newGenericShardedLinkedList(shardCount, factory)
+}
+
+func newGenericShardedLinkedList[K comparable, V any](shardCount int, factory interfaces.LinkedListFactory[K, V]) *ShardedLinkedList[K, V] {
 	if shardCount <= 0 {
 		shardCount = DefaultShardCount
 	}
 
 	shardCount = nextPowerOf2(shardCount)
 
-	shards := make([]interfaces.ILinkedList[T], shardCount)
+	shards := make([]interfaces.ILinkedList[K, V], shardCount)
 	for i := 0; i < shardCount; i++ {
 		shards[i] = factory()
 	}
 
-	return &ShardedLinkedList[T]{
+	return &ShardedLinkedList[K, V]{
 		shards:    shards,
 		shardMask: uint64(shardCount - 1),
 	}
 }
 
-func NewShardedLinkedList[T comparable](shardCount int) *ShardedLinkedList[T] {
-	factory := func() interfaces.ILinkedList[T] {
-		return NewLinkedList[T]()
-	}
-	return NewGenericShardedLinkedList(shardCount, factory)
-}
-
-func NewShardedAtomicLinkedList[T comparable](shardCount int) *ShardedLinkedList[T] {
-	factory := func() interfaces.ILinkedList[T] {
-		return NewAtomicLinkedList[T]()
-	}
-	return NewGenericShardedLinkedList(shardCount, factory)
-}
-
-func (sl *ShardedLinkedList[T]) getShard(key T) interfaces.ILinkedList[T] {
+func (sl *ShardedLinkedList[K, V]) getShard(key K) interfaces.ILinkedList[K, V] {
 	var shardIndex uint64
 
 	if hashable, ok := any(key).(interfaces.Hashable); ok {
@@ -77,17 +77,25 @@ func (sl *ShardedLinkedList[T]) getShard(key T) interfaces.ILinkedList[T] {
 	return sl.shards[shardIndex&sl.shardMask]
 }
 
-func (sl *ShardedLinkedList[T]) Get(key T) (T, bool) {
+func (sl *ShardedLinkedList[K, V]) ForEach(func(key K, value V) bool) {
+	for _, shard := range sl.shards {
+		shard.ForEach(func(key K, value V) bool {
+			return true
+		})
+	}
+}
+
+func (sl *ShardedLinkedList[K, V]) Get(key K) (V, bool) {
 	shard := sl.getShard(key)
 	return shard.Get(key)
 }
 
-func (sl *ShardedLinkedList[T]) Set(key T, value T) error {
+func (sl *ShardedLinkedList[K, V]) Set(key K, value V) error {
 	shard := sl.getShard(key)
 	return shard.Set(key, value)
 }
 
-func (sl *ShardedLinkedList[T]) Delete(key T) error {
+func (sl *ShardedLinkedList[K, V]) Delete(key K) error {
 	shard := sl.getShard(key)
 	return shard.Delete(key)
 }

@@ -10,7 +10,7 @@ import (
 
 // Generic test functions to reduce code duplication
 
-func testBasicOperations[T interfaces.ILinkedList[int]](t *testing.T, list T, testName string) {
+func testLockingOperations[T interfaces.ILinkedList[int, int]](t *testing.T, list T, testName string) {
 	// Test Set
 	if err := list.Set(1, 100); err != nil {
 		t.Fatalf("%s Set failed: %v", testName, err)
@@ -43,7 +43,7 @@ func testBasicOperations[T interfaces.ILinkedList[int]](t *testing.T, list T, te
 	}
 }
 
-func testEmptyList[T interfaces.ILinkedList[string]](t *testing.T, list T, testName string) {
+func testEmptyList[T interfaces.ILinkedList[string, string]](t *testing.T, list T, testName string) {
 	// Test Get on empty list
 	value, found := list.Get("nonexistent")
 	if found {
@@ -59,7 +59,7 @@ func testEmptyList[T interfaces.ILinkedList[string]](t *testing.T, list T, testN
 	}
 }
 
-func testSingleElement[T interfaces.ILinkedList[string]](t *testing.T, list T, testName string) {
+func testSingleElement[T interfaces.ILinkedList[string, string]](t *testing.T, list T, testName string) {
 	// Add single element
 	if err := list.Set("key1", "value1"); err != nil {
 		t.Fatalf("%s Set failed: %v", testName, err)
@@ -83,7 +83,7 @@ func testSingleElement[T interfaces.ILinkedList[string]](t *testing.T, list T, t
 	}
 }
 
-func testUpdateExistingKey[T interfaces.ILinkedList[int]](t *testing.T, list T, testName string) {
+func testUpdateExistingKey[T interfaces.ILinkedList[int, int]](t *testing.T, list T, testName string) {
 	// Set initial value
 	if err := list.Set(1, 100); err != nil {
 		t.Fatalf("%s Set failed: %v", testName, err)
@@ -101,7 +101,7 @@ func testUpdateExistingKey[T interfaces.ILinkedList[int]](t *testing.T, list T, 
 	}
 }
 
-func testConcurrentAccess[T interfaces.ILinkedList[int]](t *testing.T, list T, testName string) {
+func testConcurrentAccess[T interfaces.ILinkedList[int, int]](t *testing.T, list T, testName string) {
 	const numGoroutines = 50
 	const numOperations = 100
 
@@ -151,7 +151,7 @@ func testConcurrentAccess[T interfaces.ILinkedList[int]](t *testing.T, list T, t
 	t.Logf("%s concurrent access test completed successfully", testName)
 }
 
-func testZeroValues[T interfaces.ILinkedList[int]](t *testing.T, list T, testName string) {
+func testZeroValues[T interfaces.ILinkedList[int, int]](t *testing.T, list T, testName string) {
 	// Test setting zero value
 	if err := list.Set(0, 0); err != nil {
 		t.Fatalf("%s Set zero value failed: %v", testName, err)
@@ -178,126 +178,126 @@ func testZeroValues[T interfaces.ILinkedList[int]](t *testing.T, list T, testNam
 // Specific tests for each implementation
 
 // Lock-based LinkedList Tests
-func TestLockBasedLinkedList_BasicOperations(t *testing.T) {
-	list := linkedlist.NewLinkedList[int]()
-	testBasicOperations(t, list, "LockBased")
+func TestLockBasedLinkedList_LockingOperations(t *testing.T) {
+	list := linkedlist.New[int, int]()
+	testLockingOperations(t, list, "LockBased")
 }
 
 func TestLockBasedLinkedList_EmptyList(t *testing.T) {
-	list := linkedlist.NewLinkedList[string]()
+	list := linkedlist.New[string, string]()
 	testEmptyList(t, list, "LockBased")
 }
 
 func TestLockBasedLinkedList_SingleElement(t *testing.T) {
-	list := linkedlist.NewLinkedList[string]()
+	list := linkedlist.New[string, string]()
 	testSingleElement(t, list, "LockBased")
 }
 
 func TestLockBasedLinkedList_UpdateExistingKey(t *testing.T) {
-	list := linkedlist.NewLinkedList[int]()
+	list := linkedlist.New[int, int]()
 	testUpdateExistingKey(t, list, "LockBased")
 }
 
 func TestLockBasedLinkedList_ConcurrentAccess(t *testing.T) {
-	list := linkedlist.NewLinkedList[int]()
+	list := linkedlist.New[int, int]()
 	testConcurrentAccess(t, list, "LockBased")
 }
 
 func TestLockBasedLinkedList_ZeroValues(t *testing.T) {
-	list := linkedlist.NewLinkedList[int]()
+	list := linkedlist.New[int, int]()
 	testZeroValues(t, list, "LockBased")
 }
 
 // Atomic LinkedList Tests
-func TestAtomicLinkedList_BasicOperations(t *testing.T) {
-	list := linkedlist.NewAtomicLinkedList[int]()
-	testBasicOperations(t, list, "Atomic")
+func TestAtomicLinkedList_LockingOperations(t *testing.T) {
+	list := linkedlist.NewAtomic[int, int]()
+	testLockingOperations(t, list, "Atomic")
 }
 
 func TestAtomicLinkedList_EmptyList(t *testing.T) {
-	list := linkedlist.NewAtomicLinkedList[string]()
+	list := linkedlist.NewAtomic[string, string]()
 	testEmptyList(t, list, "Atomic")
 }
 
 func TestAtomicLinkedList_SingleElement(t *testing.T) {
-	list := linkedlist.NewAtomicLinkedList[string]()
+	list := linkedlist.NewAtomic[string, string]()
 	testSingleElement(t, list, "Atomic")
 }
 
 func TestAtomicLinkedList_UpdateExistingKey(t *testing.T) {
-	list := linkedlist.NewAtomicLinkedList[int]()
+	list := linkedlist.NewAtomic[int, int]()
 	testUpdateExistingKey(t, list, "Atomic")
 }
 
 func TestAtomicLinkedList_ConcurrentAccess(t *testing.T) {
-	list := linkedlist.NewAtomicLinkedList[int]()
+	list := linkedlist.NewAtomic[int, int]()
 	testConcurrentAccess(t, list, "Atomic")
 }
 
 func TestAtomicLinkedList_ZeroValues(t *testing.T) {
-	list := linkedlist.NewAtomicLinkedList[int]()
+	list := linkedlist.NewAtomic[int, int]()
 	testZeroValues(t, list, "Atomic")
 }
 
 // Sharded LinkedList (Lock-based) Tests
-func TestShardedLinkedList_BasicOperations(t *testing.T) {
-	list := linkedlist.NewShardedLinkedList[int](16)
-	testBasicOperations(t, list, "ShardedLock")
+func TestShardedLinkedList_LockingOperations(t *testing.T) {
+	list := linkedlist.NewSharded[int, int](16)
+	testLockingOperations(t, list, "ShardedLock")
 }
 
 func TestShardedLinkedList_EmptyList(t *testing.T) {
-	list := linkedlist.NewShardedLinkedList[string](16)
+	list := linkedlist.NewSharded[string, string](16)
 	testEmptyList(t, list, "ShardedLock")
 }
 
 func TestShardedLinkedList_SingleElement(t *testing.T) {
-	list := linkedlist.NewShardedLinkedList[string](16)
+	list := linkedlist.NewSharded[string, string](16)
 	testSingleElement(t, list, "ShardedLock")
 }
 
 func TestShardedLinkedList_UpdateExistingKey(t *testing.T) {
-	list := linkedlist.NewShardedLinkedList[int](16)
+	list := linkedlist.NewSharded[int, int](16)
 	testUpdateExistingKey(t, list, "ShardedLock")
 }
 
 func TestShardedLinkedList_ConcurrentAccess(t *testing.T) {
-	list := linkedlist.NewShardedLinkedList[int](16)
+	list := linkedlist.NewSharded[int, int](16)
 	testConcurrentAccess(t, list, "ShardedLock")
 }
 
 func TestShardedLinkedList_ZeroValues(t *testing.T) {
-	list := linkedlist.NewShardedLinkedList[int](16)
+	list := linkedlist.NewSharded[int, int](16)
 	testZeroValues(t, list, "ShardedLock")
 }
 
 // Sharded Atomic LinkedList Tests
-func TestShardedAtomicLinkedList_BasicOperations(t *testing.T) {
-	list := linkedlist.NewShardedAtomicLinkedList[int](16)
-	testBasicOperations(t, list, "ShardedAtomic")
+func TestShardedAtomicLinkedList_LockingOperations(t *testing.T) {
+	list := linkedlist.NewShardedAtomic[int, int](16)
+	testLockingOperations(t, list, "ShardedAtomic")
 }
 
 func TestShardedAtomicLinkedList_EmptyList(t *testing.T) {
-	list := linkedlist.NewShardedAtomicLinkedList[string](16)
+	list := linkedlist.NewShardedAtomic[string, string](16)
 	testEmptyList(t, list, "ShardedAtomic")
 }
 
 func TestShardedAtomicLinkedList_SingleElement(t *testing.T) {
-	list := linkedlist.NewShardedAtomicLinkedList[string](16)
+	list := linkedlist.NewShardedAtomic[string, string](16)
 	testSingleElement(t, list, "ShardedAtomic")
 }
 
 func TestShardedAtomicLinkedList_UpdateExistingKey(t *testing.T) {
-	list := linkedlist.NewShardedAtomicLinkedList[int](16)
+	list := linkedlist.NewShardedAtomic[int, int](16)
 	testUpdateExistingKey(t, list, "ShardedAtomic")
 }
 
 func TestShardedAtomicLinkedList_ConcurrentAccess(t *testing.T) {
-	list := linkedlist.NewShardedAtomicLinkedList[int](16)
+	list := linkedlist.NewShardedAtomic[int, int](16)
 	testConcurrentAccess(t, list, "ShardedAtomic")
 }
 
 func TestShardedAtomicLinkedList_ZeroValues(t *testing.T) {
-	list := linkedlist.NewShardedAtomicLinkedList[int](16)
+	list := linkedlist.NewShardedAtomic[int, int](16)
 	testZeroValues(t, list, "ShardedAtomic")
 }
 
@@ -307,8 +307,8 @@ func TestShardedLinkedList_DifferentShardCounts(t *testing.T) {
 
 	for _, shardCount := range testShardCounts {
 		t.Run("ShardCount_"+string(rune(shardCount+'0')), func(t *testing.T) {
-			list := linkedlist.NewShardedLinkedList[int](shardCount)
-			testBasicOperations(t, list, "ShardedLock_"+string(rune(shardCount+'0')))
+			list := linkedlist.NewSharded[int, int](shardCount)
+			testLockingOperations(t, list, "ShardedLock_"+string(rune(shardCount+'0')))
 		})
 	}
 }
@@ -318,8 +318,8 @@ func TestShardedAtomicLinkedList_DifferentShardCounts(t *testing.T) {
 
 	for _, shardCount := range testShardCounts {
 		t.Run("ShardCount_"+string(rune(shardCount+'0')), func(t *testing.T) {
-			list := linkedlist.NewShardedAtomicLinkedList[int](shardCount)
-			testBasicOperations(t, list, "ShardedAtomic_"+string(rune(shardCount+'0')))
+			list := linkedlist.NewShardedAtomic[int, int](shardCount)
+			testLockingOperations(t, list, "ShardedAtomic_"+string(rune(shardCount+'0')))
 		})
 	}
 }
