@@ -1,3 +1,3 @@
 module file-downloader
 
-go 1.21
+go 1.25
