@@ -29,6 +29,7 @@ vendor/
 # Build output
 /file-downloader/downloads/*
 !/file-downloader/downloads/.gitkeep
+/http-server/assets/
 
 # Temporary files
 *.tmp
