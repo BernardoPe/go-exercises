@@ -17,5 +17,5 @@ A simple in-memory key-value store.
 ### 3. [HTTP Server](http-server)
 A simple HTTP 1.1 server implementation.
 
-### 4. [Websocket Chat](websocket-chat)
+### 4. [Websocket Chat](ws-chat)
 A real-time chat application using WebSockets.
